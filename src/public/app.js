@@ -159,7 +159,7 @@ function enterDashboard() {
 function startPolling() {
   fetchFeed();
   if (state.pollTimer) clearInterval(state.pollTimer);
-  state.pollTimer = setInterval(fetchFeed, 60 * 1000);
+  state.pollTimer = setInterval(fetchFeed, 10 * 1000);
 }
 
 async function fetchFeed() {
