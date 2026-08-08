@@ -1,3 +1,4 @@
+// Step 2: basic routing structure added
 import 'dotenv/config';
 import express from 'express';
 import cors from 'cors';
