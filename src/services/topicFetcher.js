@@ -67,6 +67,7 @@ export async function discoverTopics() {
   }
 
   // 2. Fetch RSS Feeds
+  console.log("Fetching topics from RSS...");
   for (const feedConfig of RSS_FEEDS) {
     try {
       const feed = await parser.parseURL(feedConfig.url);
