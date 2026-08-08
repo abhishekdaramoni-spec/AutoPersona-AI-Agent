@@ -13,6 +13,7 @@ export function startScheduler() {
   
   // Set up 10-minute loop
   intervalId = setInterval(() => {
+    console.log("Autonomous loop running...");
     console.log('[Scheduler] Running autonomous cycle...');
     runAutonomousCycle().catch(e => console.error('[Scheduler] Interval run failed:', e.message));
   }, 10 * 60 * 1000);
