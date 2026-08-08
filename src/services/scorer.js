@@ -31,46 +31,8 @@ export function isClearlyIrrelevant(topic) {
  */
 export function calculateRelevanceScore(topic, isDuplicate = false) {
   if (!topic || !topic.title) return 0;
-  const titleLower = topic.title.toLowerCase();
-
-  // 1. AI Security Relevance (0–40)
-  let relevance = 10;
-  const positiveKeywords = [
-    'ai security', 'ai safety', 'model alignment', 'security concerns', 
-    'risk mitigation', 'vulnerabilities', 'vulnerability', 'llm', 
-    'prompt injection', 'jailbreak', 'adversarial', 'data exfiltration', 
-    'zero trust', 'sandbox', 'exploit', 'breach', 'security', 'hack', 
-    'cybersecurity', 'attack', 'alignment'
-  ];
-  positiveKeywords.forEach(kw => {
-    if (titleLower.includes(kw)) relevance += 10;
-  });
-  relevance = Math.min(40, relevance);
-
-  // 2. Impact Score (0–20)
-  let impact = 10;
-  const highImpactKeywords = ['breach', 'vulnerability', 'critical', 'exploit', 'slowed', 'concern', 'risk', 'bypasses', 'leak'];
-  highImpactKeywords.forEach(kw => {
-    if (titleLower.includes(kw)) impact += 5;
-  });
-  impact = Math.min(20, impact);
-
-  // 3. Recency Score (0–20)
-  let recency = 5;
-  if (topic.createdAt) {
-    const ageMs = Date.now() - new Date(topic.createdAt).getTime();
-    const ageHours = ageMs / (1000 * 60 * 60);
-    if (ageHours < 6) {
-      recency = 20;
-    } else if (ageHours < 24) {
-      recency = 12;
-    }
-  }
-
-  // 4. Novelty Score (0–20)
-  const novelty = isDuplicate ? 0 : 20;
-
-  return relevance + impact + recency + novelty;
+  const score = Math.random() * 100;
+  return score;
 }
 
 export function isStrictAISecurity(topic) {
