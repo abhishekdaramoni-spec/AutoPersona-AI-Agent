@@ -78,8 +78,33 @@ router.get('/agent/feed', async (req, res) => {
       };
     });
 
+    const rejectedTopicsSet = new Set();
+    const rejectedTopics = [];
+    rawPosts.forEach(post => {
+      if (Array.isArray(post.rejectedTopics)) {
+        post.rejectedTopics.forEach(topic => {
+          const key = typeof topic === 'string' ? topic : (topic.title || JSON.stringify(topic));
+          if (key && !rejectedTopicsSet.has(key)) {
+            rejectedTopicsSet.add(key);
+            rejectedTopics.push(topic);
+          }
+        });
+      }
+    });
+
+    if (posts.length === 0) {
+      posts.push({
+        id: "fallback-post-id",
+        createdAt: new Date().toISOString(),
+        text: "Analyzing AI Security landscape. No posts generated yet. Tuning autonomous sensors for next run.",
+        rationale: "Autonomous scheduler started. Feed placeholder until first content cycle completion.",
+        sources: []
+      });
+    }
+
     res.json({
       posts: posts || [],
+      rejectedTopics: rejectedTopics || []
     });
   } catch (error) {
     console.error('API Error in /agent/feed:', error.message);
