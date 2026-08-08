@@ -42,6 +42,9 @@ router.post('/agent/init', async (req, res) => {
     // Automatically start autonomous scheduler loop inside /init (True Autonomy!)
     startScheduler();
 
+    // Run first cycle immediately so initial post is created right away
+    runAutonomousCycle().catch(e => console.error('[Init] Immediate cycle error:', e.message));
+
     res.status(201).json({
       agentId: agent.id
     });
