@@ -102,7 +102,11 @@ router.get('/agent/feed', async (req, res) => {
       });
     }
 
+    // Add timestamp to feed response
+    const timestamp = new Date().toISOString();
+
     res.json({
+      timestamp,
       posts: posts || [],
       rejectedTopics: rejectedTopics || []
     });
