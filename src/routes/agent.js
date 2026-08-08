@@ -59,9 +59,9 @@ router.get('/agent/feed', async (req, res) => {
       return res.status(404).json({ error: 'No active agent found. Initialize an agent first.' });
     }
 
-    const posts = await db.getPosts(agentId);
+    const rawPosts = await db.getPosts(agentId) || [];
     
-    const formattedPosts = posts.map(post => {
+    const posts = rawPosts.map(post => {
       let sources = [];
       if (Array.isArray(post.sources)) {
         sources = post.sources.map(s => {
@@ -79,7 +79,7 @@ router.get('/agent/feed', async (req, res) => {
     });
 
     res.json({
-      posts: formattedPosts
+      posts: posts || [],
     });
   } catch (error) {
     console.error('API Error in /agent/feed:', error.message);

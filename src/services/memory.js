@@ -4,6 +4,11 @@ import path from 'path';
 import fs from 'fs';
 
 let db = null;
+const memorySet = new Set();
+
+export function hasSeen(topic) {
+  return memorySet.has(topic);
+}
 
 export async function getDb() {
   if (db) return db;
