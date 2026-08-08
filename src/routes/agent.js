@@ -39,11 +39,15 @@ router.post('/agent/init', async (req, res) => {
 
     await db.saveAgent(agent);
     
-    // Automatically start autonomous scheduler loop inside /init (True Autonomy!)
+    // Automatically start autonomous scheduler loop inside /init
     startScheduler();
 
-    // Run first cycle immediately so initial post is created right away
-    runAutonomousCycle().catch(e => console.error('[Init] Immediate cycle error:', e.message));
+    // Run first cycle immediately and await completion so the initial post is created right away
+    try {
+      await runAutonomousCycle();
+    } catch (e) {
+      console.error('[Init] Immediate cycle error:', e.message);
+    }
 
     res.status(201).json({
       agentId: agent.id
