@@ -55,14 +55,14 @@ router.post('/agent/init', async (req, res) => {
 router.get('/agent/feed', async (req, res) => {
   try {
     const agentId = await getTargetAgentId(req);
-    const isInitialized = !!agentId;
-    if (!isInitialized) {
-      return res.status(400).json({ error: "Agent not initialized" });
+    if (!agentId) {
+      return res.status(404).json({ error: 'No active agent found. Initialize an agent first via POST /api/agent/init.' });
     }
 
     const rawPosts = await db.getPosts(agentId) || [];
-    
+
     const posts = rawPosts.map(post => {
+      // Normalise sources to URL strings
       let sources = [];
       if (Array.isArray(post.sources)) {
         sources = post.sources.map(s => {
@@ -70,47 +70,28 @@ router.get('/agent/feed', async (req, res) => {
           return s.url || s.link;
         }).filter(Boolean);
       }
+
+      // Include rejectedTopics so the frontend decision log can render them
+      let rejectedTopics = [];
+      if (Array.isArray(post.rejectedTopics)) {
+        rejectedTopics = post.rejectedTopics;
+      }
+
       return {
-        id: post.id,
-        createdAt: post.createdAt,
-        text: post.text,
-        rationale: post.rationale,
-        sources: sources
+        id:             post.id,
+        createdAt:      post.createdAt,
+        text:           post.text,
+        rationale:      post.rationale,
+        styleType:      post.styleType || 'Insight',
+        sources,
+        rejectedTopics
       };
     });
 
-    const rejectedTopicsSet = new Set();
-    const rejectedTopics = [];
-    rawPosts.forEach(post => {
-      if (Array.isArray(post.rejectedTopics)) {
-        post.rejectedTopics.forEach(topic => {
-          const key = typeof topic === 'string' ? topic : (topic.title || JSON.stringify(topic));
-          if (key && !rejectedTopicsSet.has(key)) {
-            rejectedTopicsSet.add(key);
-            rejectedTopics.push(topic);
-          }
-        });
-      }
-    });
+    // Newest first
+    posts.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
 
-    if (posts.length === 0) {
-      posts.push({
-        id: "fallback-post-id",
-        createdAt: new Date().toISOString(),
-        text: "Analyzing AI Security landscape. No posts generated yet. Tuning autonomous sensors for next run.",
-        rationale: "Autonomous scheduler started. Feed placeholder until first content cycle completion.",
-        sources: []
-      });
-    }
-
-    // Add timestamp to feed response
-    const timestamp = new Date().toISOString();
-
-    res.json({
-      timestamp,
-      posts: posts || [],
-      rejectedTopics: rejectedTopics || []
-    });
+    res.json({ posts });
   } catch (error) {
     console.error('API Error in /agent/feed:', error.message);
     res.status(500).json({ error: error.message });
