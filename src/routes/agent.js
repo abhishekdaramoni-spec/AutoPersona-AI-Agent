@@ -55,8 +55,9 @@ router.post('/agent/init', async (req, res) => {
 router.get('/agent/feed', async (req, res) => {
   try {
     const agentId = await getTargetAgentId(req);
-    if (!agentId) {
-      return res.status(404).json({ error: 'No active agent found. Initialize an agent first.' });
+    const isInitialized = !!agentId;
+    if (!isInitialized) {
+      return res.status(400).json({ error: "Agent not initialized" });
     }
 
     const rawPosts = await db.getPosts(agentId) || [];
