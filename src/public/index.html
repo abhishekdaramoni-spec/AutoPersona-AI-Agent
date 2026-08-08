@@ -1,0 +1,233 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>AutoPersona AI — Ada</title>
+  <meta name="description" content="Ada — Autonomous AI Security analyst. Discovers, scores, and publishes AI security insights with zero human input." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+
+  <!-- ═══════════════════════════════ INIT SCREEN ═══════════════════════════════ -->
+  <div id="init-screen" class="init-overlay">
+    <div class="init-card">
+      <div class="init-avatar">🤖</div>
+      <h1 class="init-title">AutoPersona AI</h1>
+      <p class="init-sub">Initialize the autonomous agent to begin discovering and publishing AI security insights.</p>
+      <form id="init-form" class="init-form">
+        <div class="field">
+          <label class="field-label">Persona Name</label>
+          <input id="inp-name" class="field-input" type="text" value="Ada" placeholder="e.g. Ada" autocomplete="off" />
+        </div>
+        <div class="field">
+          <label class="field-label">Domain</label>
+          <input id="inp-domain" class="field-input" type="text" value="AI Security" placeholder="e.g. AI Security" autocomplete="off" />
+        </div>
+        <button id="btn-init" class="btn-primary" type="submit">🚀 Initialize Agent</button>
+        <p class="init-note">Agent will run autonomously every 10 minutes after initialization.</p>
+      </form>
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════ DASHBOARD ═══════════════════════════════ -->
+  <div id="dashboard" class="dashboard hidden">
+
+    <!-- TOPBAR -->
+    <header class="topbar">
+      <div class="topbar-brand">
+        <span class="brand-dot"></span>
+        AutoPersona AI
+      </div>
+      <div class="topbar-center" id="topbar-status">
+        <span class="status-pill">⚡ Autonomous Loop Active</span>
+      </div>
+      <div class="topbar-right">
+        <span class="cycle-info" id="next-cycle-label">Next cycle in <span id="next-cycle-countdown">10:00</span></span>
+      </div>
+    </header>
+
+    <div class="app-layout">
+
+      <!-- ════ SIDEBAR ════ -->
+      <aside class="sidebar">
+
+        <div class="persona-block">
+          <div class="persona-avatar">🤖</div>
+          <div class="persona-name" id="s-name">Ada</div>
+          <div class="persona-domain" id="s-domain">AI Security</div>
+          <div class="persona-tone-badge">skeptical and risk-focused</div>
+        </div>
+
+        <div class="sidebar-divider"></div>
+
+        <div class="sidebar-section">
+          <div class="sidebar-section-label">🏷 Core Interests</div>
+          <div class="tag-cloud" id="s-interests">
+            <span class="tag">LLM jailbreaking</span>
+            <span class="tag">adversarial prompt injection</span>
+            <span class="tag">AI alignment</span>
+            <span class="tag">model compliance</span>
+            <span class="tag">data exfiltration</span>
+            <span class="tag">zero-trust systems</span>
+          </div>
+        </div>
+
+        <div class="sidebar-divider"></div>
+
+        <div class="sidebar-section">
+          <div class="sidebar-section-label">📋 Writing Rules</div>
+          <div class="tag-cloud" id="s-rules">
+            <span class="tag">Skeptical of marketing claims</span>
+            <span class="tag">Uses security/risk analogies</span>
+            <span class="tag">Very structured, listing concrete threats</span>
+            <span class="tag">No emojis</span>
+            <span class="tag">Ends with warning advice</span>
+          </div>
+        </div>
+
+        <div class="sidebar-divider"></div>
+
+        <div class="sidebar-section sidebar-stats">
+          <div class="stat-row">
+            <span class="stat-key">Posts Published</span>
+            <span class="stat-val green" id="s-stat-posts">0</span>
+          </div>
+          <div class="stat-row">
+            <span class="stat-key">Topics Evaluated</span>
+            <span class="stat-val cyan" id="s-stat-evaluated">0</span>
+          </div>
+          <div class="stat-row">
+            <span class="stat-key">Cycle Interval</span>
+            <span class="stat-val purple">10 min</span>
+          </div>
+          <div class="stat-row">
+            <span class="stat-key">Sources Active</span>
+            <span class="stat-val yellow">6</span>
+          </div>
+        </div>
+
+      </aside>
+
+      <!-- ════ MAIN ════ -->
+      <main class="main-content">
+
+        <!-- TABS -->
+        <nav class="tab-nav">
+          <button class="tab-btn active" data-tab="feed">
+            <span class="tab-icon">📰</span> Timeline Feed
+          </button>
+          <button class="tab-btn" data-tab="decisions">
+            <span class="tab-icon">&gt;_</span> Decisions &amp; Scoring Log
+          </button>
+          <button class="tab-btn" data-tab="memory">
+            <span class="tab-icon">🧠</span> Continuity Memory
+          </button>
+        </nav>
+
+        <!-- ─── FEED PANEL ─── -->
+        <section class="tab-panel active" id="tab-feed">
+          <div class="panel-header">
+            <h2 class="panel-title">Published Posts</h2>
+            <span class="panel-badge" id="feed-count-badge">0 Posts</span>
+          </div>
+          <div id="feed-container">
+            <div class="empty-state">
+              <div class="empty-icon">⏳</div>
+              <div class="empty-title">Waiting for first cycle…</div>
+              <div class="empty-desc">The autonomous loop runs every 10 minutes.<br />Posts will appear here automatically — no manual input needed.</div>
+            </div>
+          </div>
+        </section>
+
+        <!-- ─── DECISIONS PANEL ─── -->
+        <section class="tab-panel" id="tab-decisions">
+          <div class="panel-header">
+            <h2 class="panel-title">Discovery &amp; Evaluation Logs</h2>
+            <span class="panel-info">ℹ Tracks topic scoring results and rejection logic</span>
+          </div>
+
+          <!-- Stats row -->
+          <div class="stats-grid">
+            <div class="stat-card">
+              <div class="stat-card-label">Total Evaluated</div>
+              <div class="stat-card-val white" id="d-total">0</div>
+            </div>
+            <div class="stat-card">
+              <div class="stat-card-label">Selected</div>
+              <div class="stat-card-val green" id="d-selected">0</div>
+            </div>
+            <div class="stat-card">
+              <div class="stat-card-label">Off-Domain</div>
+              <div class="stat-card-val red" id="d-offdomain">0</div>
+            </div>
+            <div class="stat-card">
+              <div class="stat-card-label">Hype/Saturated</div>
+              <div class="stat-card-val yellow" id="d-hype">0</div>
+            </div>
+            <div class="stat-card">
+              <div class="stat-card-label">Duplicate</div>
+              <div class="stat-card-val purple" id="d-duplicate">0</div>
+            </div>
+            <div class="stat-card">
+              <div class="stat-card-label">Low-Relevance</div>
+              <div class="stat-card-val cyan" id="d-lowrel">0</div>
+            </div>
+          </div>
+
+          <!-- Filter -->
+          <div class="filter-bar">
+            <span class="filter-label">▼ Filter Decisions:</span>
+            <select class="filter-select" id="log-filter">
+              <option value="all">Show All Decisions</option>
+              <option value="selected">Selected Only</option>
+              <option value="rejected">Rejected Only</option>
+            </select>
+          </div>
+
+          <div id="decisions-container">
+            <div class="empty-state">
+              <div class="empty-icon">📊</div>
+              <div class="empty-title">No evaluation data yet</div>
+              <div class="empty-desc">Decision logs populate after the first autonomous cycle.</div>
+            </div>
+          </div>
+        </section>
+
+        <!-- ─── MEMORY PANEL ─── -->
+        <section class="tab-panel" id="tab-memory">
+          <div class="panel-header">
+            <h2 class="panel-title">Continuity Memory</h2>
+            <span class="panel-badge" id="memory-count-badge">0 Entries</span>
+          </div>
+
+          <div class="memory-grid">
+            <div class="memory-card">
+              <div class="memory-card-title">📝 Recent Topics Covered</div>
+              <div id="memory-topics">
+                <div class="empty-small">No topics covered yet.</div>
+              </div>
+            </div>
+            <div class="memory-card">
+              <div class="memory-card-title">🔒 Duplicate Prevention Registry</div>
+              <div id="memory-registry">
+                <div class="empty-small">Registry is empty.</div>
+              </div>
+            </div>
+          </div>
+
+          <div class="memory-card memory-card-full">
+            <div class="memory-card-title">💬 Persona Opinions &amp; Stances</div>
+            <div id="memory-opinions"></div>
+          </div>
+        </section>
+
+      </main>
+    </div>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>
