@@ -32,6 +32,7 @@ export function isClearlyIrrelevant(topic) {
 export function calculateRelevanceScore(topic, isDuplicate = false) {
   if (!topic || !topic.title) return 0;
   const score = Math.random() * 100;
+  if (score < 50) return null;
   return score;
 }
 

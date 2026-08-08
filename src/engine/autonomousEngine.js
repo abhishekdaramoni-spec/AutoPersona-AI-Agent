@@ -71,6 +71,10 @@ export async function runAutonomousCycle() {
 
       // Calculate score out of 100
       const score = calculateRelevanceScore(topic, isDuplicate);
+      if (score === null) {
+        cycleRejections.push({ title: topic.title, reason: 'Low relevance' });
+        continue;
+      }
       filteredTopics.push({ ...topic, score });
     }
 
@@ -81,6 +85,7 @@ export async function runAutonomousCycle() {
         if (isDuplicate || isClearlyIrrelevant(topic)) continue;
         
         const score = calculateRelevanceScore(topic, false);
+        if (score === null) continue;
         filteredTopics.push({ ...topic, score });
       }
     }
