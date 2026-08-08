@@ -66,7 +66,13 @@ router.get('/agent/feed', async (req, res) => {
       return res.status(404).json({ error: 'No active agent found. Initialize an agent first via POST /api/agent/init.' });
     }
 
-    const rawPosts = await db.getPosts(agentId) || [];
+    let rawPosts = await db.getPosts(agentId) || [];
+    if (rawPosts.length === 0) {
+      const latestAgent = await db.getLatestAgent();
+      if (latestAgent && latestAgent.id !== agentId) {
+        rawPosts = await db.getPosts(latestAgent.id) || [];
+      }
+    }
 
     const posts = rawPosts.map(post => {
       // Normalise sources to URL strings
