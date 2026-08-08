@@ -14,6 +14,9 @@ async function getTargetAgentId(req) {
 
 // 1. POST /api/agent/init
 router.post('/agent/init', async (req, res) => {
+  if (!req.body) {
+    return res.status(400).json({ error: "Invalid request" });
+  }
   const name = req.body.persona?.name || req.body.name;
   const domain = req.body.persona?.domain || req.body.domain;
   
