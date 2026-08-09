@@ -63,7 +63,7 @@ router.get('/agent/feed', async (req, res) => {
   try {
     const agentId = await getTargetAgentId(req);
     if (!agentId) {
-      return res.status(404).json({ error: 'No active agent found. Initialize an agent first via POST /api/agent/init.' });
+      return res.json({ posts: [] });
     }
 
     let rawPosts = await db.getPosts(agentId) || [];
@@ -116,7 +116,17 @@ router.get('/agent/logs', async (req, res) => {
   try {
     const agentId = await getTargetAgentId(req);
     if (!agentId) {
-      return res.status(404).json({ error: 'No active agent found. Initialize an agent first.' });
+      return res.json({
+        stats: {
+          totalEvaluated: 0,
+          selected: 0,
+          offDomain: 0,
+          duplicate: 0,
+          lowRelevance: 0,
+          hype: 0
+        },
+        rejectedTopics: []
+      });
     }
 
     let rawPosts = await db.getPosts(agentId) || [];
@@ -187,7 +197,7 @@ router.get('/agent/memory', async (req, res) => {
   try {
     const agentId = await getTargetAgentId(req);
     if (!agentId) {
-      return res.status(404).json({ error: 'No active agent found.' });
+      return res.json({ memory: [] });
     }
 
     let rawPosts = await db.getPosts(agentId) || [];
