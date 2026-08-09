@@ -165,7 +165,7 @@ function startPolling() {
     fetchFeed();
     fetchLogs();
     fetchMemory();
-  }, 10000);
+  }, 5000);
 }
 
 async function fetchFeed() {

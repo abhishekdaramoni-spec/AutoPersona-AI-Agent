@@ -8,18 +8,24 @@ let isRunning = false;
 
 export function startScheduler() {
   if (intervalId) {
-    clearInterval(intervalId);
+    console.log("⚠️ Agent already running");
+    return;
   }
   
-  // RUN FIRST CYCLE IMMEDIATELY
-  console.log("Starting autonomous agent...");
-  runAutonomousCycle().catch(e => console.error('[Scheduler] Initial run failed:', e.message));
+  console.log("🔥 Starting Autonomous Agent...");
+  try {
+    runAutonomousCycle().catch(e => console.error('❌ Error in first cycle:', e));
+  } catch (err) {
+    console.error('❌ Error in first cycle:', err);
+  }
 
   // THEN START LOOP
   intervalId = setInterval(() => {
-    console.log("Autonomous loop running...");
-    console.log('[Scheduler] Running autonomous cycle...');
-    runAutonomousCycle().catch(e => console.error('[Scheduler] Interval run failed:', e.message));
+    try {
+      runAutonomousCycle().catch(e => console.error('❌ Cycle error:', e));
+    } catch (err) {
+      console.error('❌ Cycle error:', err);
+    }
   }, 10 * 60 * 1000);
 }
 
@@ -40,11 +46,41 @@ export async function runAutonomousCycle() {
       return { success: false, reason: 'No agent initialized' };
     }
 
-    const discovered = await discoverTopics();
-    console.log(`Topics fetched: ${discovered.length}`);
-    if (!discovered.length) {
-      console.log("⚠️ No topics, using fallback");
+    let discovered = [];
+    try {
+      discovered = await discoverTopics();
+    } catch (err) {
+      console.log("⚠️ Fetch failed, using fallback");
     }
+
+    if (!discovered || discovered.length === 0) {
+      console.log("⚠️ No topics, using fallback");
+      discovered = [
+        {
+          id: `fallback-1-${Date.now()}`,
+          title: "LLM jailbreak vulnerability discovered",
+          url: "https://techcrunch.com/category/artificial-intelligence/",
+          source: "RSS (TechCrunch)",
+          createdAt: new Date().toISOString()
+        },
+        {
+          id: `fallback-2-${Date.now()}`,
+          title: "AI system leaking sensitive prompts",
+          url: "https://www.wired.com/category/security/",
+          source: "RSS (Wired)",
+          createdAt: new Date().toISOString()
+        },
+        {
+          id: `fallback-3-${Date.now()}`,
+          title: "Security risks in autonomous agents",
+          url: "https://krebsonsecurity.com/",
+          source: "RSS (KrebsonSecurity)",
+          createdAt: new Date().toISOString()
+        }
+      ];
+    }
+
+    console.log("📊 Topics:", discovered.length);
 
     const filteredTopics = [];
     const cycleRejections = [];
