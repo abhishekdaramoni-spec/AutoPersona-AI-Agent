@@ -383,6 +383,31 @@ function renderMemory(memory) {
 // ════════════════════════════════════════
 // BOOT
 // ════════════════════════════════════════
+async function checkStatusAndBoot() {
+  try {
+    const res = await fetch('/api/agent/status');
+    const data = await res.json();
+    if (data.active && data.agent) {
+      state.agentId = data.agent.id;
+      state.agentName = data.agent.name;
+      state.agentDomain = data.agent.domain;
+      localStorage.setItem('ap_agentId', state.agentId);
+      localStorage.setItem('ap_agentName', state.agentName);
+      localStorage.setItem('ap_agentDomain', state.agentDomain);
+      enterDashboard();
+    } else {
+      $('init-screen').classList.remove('hidden');
+    }
+  } catch (err) {
+    console.warn('[AutoPersona] Status query failed, using localStorage:', err.message);
+    if (state.agentId) {
+      enterDashboard();
+    } else {
+      $('init-screen').classList.remove('hidden');
+    }
+  }
+}
+
 document.addEventListener('DOMContentLoaded', () => {
   initTabs();
   initForm();
@@ -390,8 +415,6 @@ document.addEventListener('DOMContentLoaded', () => {
   // Hook filter select
   $('log-filter').addEventListener('change', applyLogFilter);
 
-  // Auto-restore session
-  if (state.agentId) {
-    enterDashboard();
-  }
+  // Auto-restore session or query backend status
+  checkStatusAndBoot();
 });

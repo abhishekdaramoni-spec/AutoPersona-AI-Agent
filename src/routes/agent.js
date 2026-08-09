@@ -222,4 +222,26 @@ router.get('/agent/memory', async (req, res) => {
   }
 });
 
+// 5. GET /api/agent/status
+router.get('/agent/status', async (req, res) => {
+  try {
+    const activeAgent = await db.getLatestAgent();
+    if (activeAgent) {
+      res.json({
+        active: true,
+        agent: {
+          id: activeAgent.id,
+          name: activeAgent.name,
+          domain: activeAgent.domain
+        }
+      });
+    } else {
+      res.json({ active: false });
+    }
+  } catch (error) {
+    console.error('API Error in /agent/status:', error.message);
+    res.status(500).json({ error: error.message });
+  }
+});
+
 export default router;
