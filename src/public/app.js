@@ -158,8 +158,14 @@ function enterDashboard() {
 // ════════════════════════════════════════
 function startPolling() {
   fetchFeed();
+  fetchLogs();
+  fetchMemory();
   if (state.pollTimer) clearInterval(state.pollTimer);
-  state.pollTimer = setInterval(fetchFeed, 10 * 1000);
+  state.pollTimer = setInterval(() => {
+    fetchFeed();
+    fetchLogs();
+    fetchMemory();
+  }, 10000);
 }
 
 async function fetchFeed() {
@@ -170,10 +176,75 @@ async function fetchFeed() {
     const posts = Array.isArray(data.posts) ? data.posts : [];
     state.posts = posts;
     renderFeed(posts);
-    renderDecisions(posts);
-    renderMemory(posts);
   } catch (err) {
     console.warn('[AutoPersona] Feed fetch error:', err.message);
+  }
+}
+
+async function fetchLogs() {
+  if (!state.agentId) return;
+  try {
+    const res  = await fetch(`/api/agent/logs?agentId=${state.agentId}`);
+    const data = await res.json();
+    
+    const stats = data.stats || { totalEvaluated: 0, selected: 0, offDomain: 0, duplicate: 0, lowRelevance: 0, hype: 0 };
+    $('s-stat-evaluated').textContent = stats.totalEvaluated;
+    $('d-total').textContent    = stats.totalEvaluated;
+    $('d-selected').textContent = stats.selected;
+    $('d-offdomain').textContent= stats.offDomain;
+    $('d-hype').textContent     = stats.hype;
+    $('d-duplicate').textContent= stats.duplicate;
+    $('d-lowrel').textContent   = stats.lowRelevance;
+
+    const items = [];
+
+    // Selected items
+    state.posts.forEach(post => {
+      const src0 = Array.isArray(post.sources) ? post.sources[0] : null;
+      const url    = typeof src0 === 'object' ? src0.url    : src0;
+      const title  = typeof src0 === 'object' ? (src0.title  || url) : (url || post.text?.split('\n')[0]?.replace('Insight:', '').trim());
+      const source = typeof src0 === 'object' ? (src0.source || '') : '';
+      items.push({
+        title,
+        url,
+        source,
+        reason: '[Selected] Passed all filters and scored highest this cycle.',
+        isSelected: true,
+        score: post.score || 82,
+        time: post.createdAt
+      });
+    });
+
+    // Rejected items
+    const rejected = data.rejectedTopics || [];
+    rejected.forEach(t => {
+      items.push({
+        title: t.title,
+        url: null,
+        source: '',
+        reason: `[Rejected] ${t.reason}`,
+        isSelected: false,
+        score: 0,
+        time: t.timestamp
+      });
+    });
+
+    state.logItems = items;
+    applyLogFilter();
+  } catch (err) {
+    console.warn('[AutoPersona] Logs fetch error:', err.message);
+  }
+}
+
+async function fetchMemory() {
+  if (!state.agentId) return;
+  try {
+    const res  = await fetch(`/api/agent/memory?agentId=${state.agentId}`);
+    const data = await res.json();
+    const memory = Array.isArray(data.memory) ? data.memory : [];
+    renderMemory(memory);
+  } catch (err) {
+    console.warn('[AutoPersona] Memory fetch error:', err.message);
   }
 }
 
@@ -237,50 +308,6 @@ function toggleRationale(i) {
 // ════════════════════════════════════════
 // RENDER DECISIONS
 // ════════════════════════════════════════
-function renderDecisions(posts) {
-  const items = [];
-  let selected = 0, offDomain = 0, hype = 0, duplicate = 0, lowRel = 0;
-
-  posts.forEach(post => {
-    // Selected topic
-    const src0 = Array.isArray(post.sources) ? post.sources[0] : null;
-    if (src0) {
-      const url    = typeof src0 === 'object' ? src0.url    : src0;
-      const title  = typeof src0 === 'object' ? (src0.title  || url) : url;
-      const source = typeof src0 === 'object' ? (src0.source || '') : '';
-      items.push({ title, url, source, reason: '[Selected] Passed all filters and scored highest this cycle.', isSelected: true, score: post.score || 82, time: post.createdAt });
-      selected++;
-    }
-
-    // Rejected topics
-    if (Array.isArray(post.rejectedTopics)) {
-      post.rejectedTopics.forEach(t => {
-        const title  = typeof t === 'string' ? t : (t.title  || '');
-        const reason = typeof t === 'string' ? 'Not AI security' : (t.reason || 'Not AI security');
-        const r      = reason.toLowerCase();
-        let cat = 'off-domain';
-        if (r.includes('duplicate'))  { duplicate++; cat = 'duplicate'; }
-        else if (r.includes('low'))   { lowRel++;    cat = 'low-rel';   }
-        else if (r.includes('hype') || r.includes('saturat')) { hype++; cat = 'hype'; }
-        else                          { offDomain++;              }
-        items.push({ title, url: null, source: '', reason: `[Not AI security] ${reason}`, isSelected: false, score: 0, time: post.createdAt });
-      });
-    }
-  });
-
-  const total = items.length;
-  $('s-stat-evaluated').textContent = total;
-  $('d-total').textContent    = total;
-  $('d-selected').textContent = selected;
-  $('d-offdomain').textContent= offDomain;
-  $('d-hype').textContent     = hype;
-  $('d-duplicate').textContent= duplicate;
-  $('d-lowrel').textContent   = lowRel;
-
-  state.logItems = items;
-  applyLogFilter();
-}
-
 function applyLogFilter() {
   const filter = $('log-filter').value;
   const visible = filter === 'selected' ? state.logItems.filter(x =>  x.isSelected)
@@ -298,40 +325,51 @@ function applyLogFilter() {
     return;
   }
 
-  container.innerHTML = visible.map(item => `
+  container.innerHTML = visible.map(item => {
+    let reasonBadge = '';
+    if (!item.isSelected) {
+      const reasonLower = item.reason.toLowerCase();
+      if (reasonLower.includes('duplicate')) {
+        reasonBadge = '<span class="src-chip default" style="background:rgba(168,85,247,0.12);color:var(--purple);border-color:rgba(168,85,247,0.3)">Duplicate</span>';
+      } else if (reasonLower.includes('low relevance')) {
+        reasonBadge = '<span class="src-chip default" style="background:rgba(34,211,238,0.12);color:var(--cyan);border-color:rgba(34,211,238,0.3)">Low relevance</span>';
+      } else {
+        reasonBadge = '<span class="src-chip default" style="background:rgba(244,63,94,0.12);color:var(--red);border-color:rgba(244,63,94,0.3)">Not AI security</span>';
+      }
+    } else {
+      reasonBadge = '<span class="src-chip default" style="background:rgba(16,185,129,0.12);color:var(--green);border-color:rgba(16,185,129,0.3)">Selected</span>';
+    }
+
+    return `
     <div class="log-item">
       <div class="log-check ${item.isSelected ? 'selected' : ''}">${item.isSelected ? '✓' : ''}</div>
       <div class="log-body">
         <div class="log-title">${esc(item.title)}</div>
         <div class="log-reason">${esc(item.reason)}</div>
         <div class="log-tags">
-          ${sourceChip(item.source)}
+          ${reasonBadge}
           <span class="log-time">🕐 ${timeAgo(item.time)}</span>
           ${item.url ? `<a class="log-ext" href="${esc(item.url)}" target="_blank" rel="noopener">🔗 Link</a>` : ''}
         </div>
       </div>
-      <div class="log-score ${item.isSelected ? 'selected' : ''}">${item.score}%</div>
+      <div class="log-score ${item.isSelected ? 'selected' : ''}">${item.isSelected ? item.score + '%' : '0%'}</div>
     </div>
-  `).join('');
+    `;
+  }).join('');
 }
 
 // ════════════════════════════════════════
 // RENDER MEMORY
 // ════════════════════════════════════════
-function renderMemory(posts) {
-  const titles = posts.map(p => {
-    const src = Array.isArray(p.sources) && p.sources[0];
-    return typeof src === 'object' ? (src.title || src.url) : (src || p.text?.split('\n')[0]?.replace('Insight:', '').trim());
-  }).filter(Boolean);
+function renderMemory(memory) {
+  $('memory-count-badge').textContent = memory.length + ' Entr' + (memory.length === 1 ? 'y' : 'ies');
 
-  $('memory-count-badge').textContent = titles.length + ' Entr' + (titles.length === 1 ? 'y' : 'ies');
-
-  $('memory-topics').innerHTML = titles.length
-    ? titles.map(t => `<div class="memory-entry">• ${esc(t)}</div>`).join('')
+  $('memory-topics').innerHTML = memory.length
+    ? memory.map(t => `<div class="memory-entry">• ${esc(t)}</div>`).join('')
     : '<div class="empty-small">No topics covered yet.</div>';
 
-  $('memory-registry').innerHTML = titles.length
-    ? titles.map(t => `<div class="memory-entry">🔒 ${esc(t.substring(0, 65))}${t.length > 65 ? '…' : ''}</div>`).join('')
+  $('memory-registry').innerHTML = memory.length
+    ? memory.map(t => `<div class="memory-entry">🔒 ${esc(t.substring(0, 65))}${t.length > 65 ? '…' : ''}</div>`).join('')
     : '<div class="empty-small">Registry is empty.</div>';
 
   const opinions = [

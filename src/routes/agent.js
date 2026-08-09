@@ -111,4 +111,105 @@ router.get('/agent/feed', async (req, res) => {
   }
 });
 
+// 3. GET /api/agent/logs
+router.get('/agent/logs', async (req, res) => {
+  try {
+    const agentId = await getTargetAgentId(req);
+    if (!agentId) {
+      return res.status(404).json({ error: 'No active agent found. Initialize an agent first.' });
+    }
+
+    let rawPosts = await db.getPosts(agentId) || [];
+    if (rawPosts.length === 0) {
+      const latestAgent = await db.getLatestAgent();
+      if (latestAgent && latestAgent.id !== agentId) {
+        rawPosts = await db.getPosts(latestAgent.id) || [];
+      }
+    }
+
+    let totalEvaluated = 0;
+    let selected = 0;
+    let offDomain = 0;
+    let duplicate = 0;
+    let lowRelevance = 0;
+    let hype = 0;
+    const rejectedTopics = [];
+
+    rawPosts.forEach(post => {
+      selected++;
+      totalEvaluated++;
+
+      if (Array.isArray(post.rejectedTopics)) {
+        post.rejectedTopics.forEach(t => {
+          totalEvaluated++;
+          const title = typeof t === 'string' ? t : (t.title || '');
+          const reason = typeof t === 'string' ? 'Not AI security' : (t.reason || 'Not AI security');
+          
+          const rLower = reason.toLowerCase();
+          if (rLower.includes('duplicate')) {
+            duplicate++;
+          } else if (rLower.includes('low relevance')) {
+            lowRelevance++;
+          } else if (rLower.includes('hype') || rLower.includes('saturated')) {
+            hype++;
+          } else {
+            offDomain++;
+          }
+
+          rejectedTopics.push({
+            title,
+            reason,
+            timestamp: post.createdAt
+          });
+        });
+      }
+    });
+
+    res.json({
+      stats: {
+        totalEvaluated,
+        selected,
+        offDomain,
+        duplicate,
+        lowRelevance,
+        hype
+      },
+      rejectedTopics
+    });
+  } catch (error) {
+    console.error('API Error in /agent/logs:', error.message);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// 4. GET /api/agent/memory
+router.get('/agent/memory', async (req, res) => {
+  try {
+    const agentId = await getTargetAgentId(req);
+    if (!agentId) {
+      return res.status(404).json({ error: 'No active agent found.' });
+    }
+
+    let rawPosts = await db.getPosts(agentId) || [];
+    if (rawPosts.length === 0) {
+      const latestAgent = await db.getLatestAgent();
+      if (latestAgent && latestAgent.id !== agentId) {
+        rawPosts = await db.getPosts(latestAgent.id) || [];
+      }
+    }
+
+    const titles = rawPosts.map(p => {
+      const src = Array.isArray(p.sources) && p.sources[0];
+      return typeof src === 'object' ? (src.title || src.url) : (src || p.text?.split('\n')[0]?.replace('Insight:', '').trim());
+    }).filter(Boolean);
+
+    res.json({
+      memory: titles
+    });
+  } catch (error) {
+    console.error('API Error in /agent/memory:', error.message);
+    res.status(500).json({ error: error.message });
+  }
+});
+
 export default router;
