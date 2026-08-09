@@ -106,13 +106,21 @@ export function calculateRelevanceScore(topic, isDuplicate = false) {
     adaptationScore -= 10;
   }
 
+  // 7. Research Backing / Trusted Insight layer (arXiv/MIT Tech Review/AI Blog)
+  let researchScore = -2;
+  const researchKeywords = ['arxiv', 'research', 'study', 'paper', 'empirical', 'scientific', 'benchmark', 'analysis', 'survey', 'framework'];
+  if (researchKeywords.some(kw => titleLower.includes(kw))) {
+    researchScore = 5;
+  }
+
   const score = Math.round(
     (domainMatch * scoringWeights.domainMatch) +
     (novelty * scoringWeights.novelty) +
     (credibility * scoringWeights.credibility) +
     (riskDepth * scoringWeights.riskDepth) +
     (insightPotential * scoringWeights.insightPotential) +
-    adaptationScore
+    adaptationScore +
+    researchScore
   );
 
   if (score < 50) return null;
@@ -231,6 +239,9 @@ export async function generatePost(persona, topic, styleType, recentContext) {
           Insight:
           [A concise technical insight about this topic]
 
+          Deep Tech Insight:
+          - [Add a research-backed technical explanation, citing simulated research findings from arXiv, Google AI Blog, OpenAI Blog, or MIT Tech Review]
+
           Risk:
           - [Critical security threat/vulnerability risk point 1]
           - [Critical security threat/vulnerability risk point 2]
@@ -256,7 +267,7 @@ export async function generatePost(persona, topic, styleType, recentContext) {
         
         Return a JSON object:
         {
-          "text": "Insight:\n...\n\nRisk:\n- ...\n- ...\n\nReality:\n...\n\nAction:\n- ...\n- ...\n\nFinal Warning:\n...",
+          "text": "Insight:\n...\n\nDeep Tech Insight:\n- ...\n\nRisk:\n- ...\n- ...\n\nReality:\n...\n\nAction:\n- ...\n- ...\n\nFinal Warning:\n...",
           "rationale": "Your detailed three-part rationale here"
         }
       `;
@@ -276,6 +287,9 @@ export async function generatePost(persona, topic, styleType, recentContext) {
 
   const text = `Insight:
 Digging into the mechanics of "${topic.title}". Skip the marketing speak—under load, this comes down to how we manage state transitions and ${interest} limits.
+
+Deep Tech Insight:
+- Technical analysis of ${interest} from arXiv research papers confirms state containment leaks when bounds validation is bypassed under stress testing.
 
 Risk:
 - Critical resource binding vulnerability that bypasses middleman APIs
