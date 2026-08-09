@@ -22,6 +22,26 @@ export function isClearlyIrrelevant(topic) {
   return IRRELEVANT_KEYWORDS.some(k => titleLower.includes(k));
 }
 
+export let scoringWeights = {
+  domainMatch: 1.0,
+  novelty: 1.0,
+  credibility: 1.0,
+  riskDepth: 1.0,
+  insightPotential: 1.0
+};
+
+export function adjustWeights(feedback) {
+  console.log(`[Scorer Engine] Learning: adjusting weights based on reflection feedback. Quality: ${feedback.quality}`);
+  if (feedback.quality === 'high') {
+    scoringWeights.riskDepth = Math.min(1.5, scoringWeights.riskDepth + 0.05);
+    scoringWeights.domainMatch = Math.min(1.5, scoringWeights.domainMatch + 0.05);
+    scoringWeights.insightPotential = Math.min(1.5, scoringWeights.insightPotential + 0.05);
+  } else if (feedback.quality === 'low') {
+    scoringWeights.riskDepth = Math.max(0.7, scoringWeights.riskDepth - 0.05);
+    scoringWeights.domainMatch = Math.max(0.7, scoringWeights.domainMatch - 0.05);
+  }
+}
+
 /**
  * Calculates a relevance score from 0 to 100 based on:
  * - Domain Match (0–30)
@@ -68,17 +88,24 @@ export function calculateRelevanceScore(topic, isDuplicate = false) {
     insightPotential = 10;
   }
 
-  const score = domainMatch + novelty + credibility + riskDepth + insightPotential;
+  const score = Math.round(
+    (domainMatch * scoringWeights.domainMatch) +
+    (novelty * scoringWeights.novelty) +
+    (credibility * scoringWeights.credibility) +
+    (riskDepth * scoringWeights.riskDepth) +
+    (insightPotential * scoringWeights.insightPotential)
+  );
+
   if (score < 50) return null;
   
   return {
     score,
     breakdown: {
-      domainMatch,
-      novelty,
-      credibility,
-      riskDepth,
-      insightPotential
+      domainMatch: Math.round(domainMatch * scoringWeights.domainMatch),
+      novelty: Math.round(novelty * scoringWeights.novelty),
+      credibility: Math.round(credibility * scoringWeights.credibility),
+      riskDepth: Math.round(riskDepth * scoringWeights.riskDepth),
+      insightPotential: Math.round(insightPotential * scoringWeights.insightPotential)
     }
   };
 }

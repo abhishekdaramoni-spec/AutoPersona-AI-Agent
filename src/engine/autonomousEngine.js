@@ -1,7 +1,8 @@
 import crypto from 'crypto';
 import { discoverTopics } from '../services/topicFetcher.js';
 import * as db from '../services/memory.js';
-import { calculateRelevanceScore, isClearlyIrrelevant, generatePost, POST_STYLES } from '../services/scorer.js';
+import { calculateRelevanceScore, isClearlyIrrelevant, generatePost, POST_STYLES, adjustWeights } from '../services/scorer.js';
+import { reflectOnPost } from './../services/reflection.js';
 
 let intervalId = null;
 let isRunning = false;
@@ -289,6 +290,18 @@ ${generated.rationale}`;
 
     await db.savePost(post);
     console.log("Post created");
+
+    // Reflection & Learning Loop
+    try {
+      const reflection = await reflectOnPost(post.text);
+      console.log(`[Reflection Engine] Quality: ${reflection.quality}, Reason: ${reflection.reason}`);
+      adjustWeights(reflection);
+    } catch (e) {
+      console.error('[Reflection Engine] Failed to process reflection:', e.message);
+    }
+
+    const allPosts = await db.getPosts(agent.id) || [];
+    console.log("Total posts:", allPosts.length);
 
     isRunning = false;
     return { success: true, postsCreated: 1, post };
