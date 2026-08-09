@@ -1,95 +1,224 @@
 # AutoPersona-AI 🤖🧠
 
-A minimal, production-ready autonomous AI creator agent backend. It independently discovers, evaluates, and publishes high-impact AI security insights without any human input.
+An autonomous AI agent that independently discovers, evaluates, and publishes high-quality AI security insights — without any human input after initialization.
+
+---
+
+## 🎯 The Problem
+
+Most AI-generated content systems today depend heavily on human prompts. They:
+- React to instructions
+- Generate content blindly
+- Lack decision-making capability
+
+This project explores a different question:
+> **Can an AI system decide what to publish on its own?**
+
+---
+
+## 🧠 Solution Overview
+
+AutoPersona-AI is not just a content generator. It is an **autonomous decision-making system** that:
+- Discovers AI/tech topics from live sources
+- Evaluates their relevance and impact
+- Rejects low-quality or off-domain topics
+- Publishes only high-value insights
+- Learns from past decisions over time
 
 ---
 
 ## 🚀 Key Autonomous Features
 
-* **True Autonomy**: The background cycle starts automatically upon calling `/api/agent/init` and runs continuously on a 10-minute interval.
-* **Intelligent Scoring**: Scrapes live articles and evaluates them on a 100-point safety and impact scale.
-* **Timeline Memory**: Deduplicates topics using a timeline seen registry to ensure narrative novelty.
-* **Structured Rationale**: Attaches structured reason analysis directly to published post metadata.
+### 🔄 True Autonomy
+- Starts only after `POST /api/agent/init`
+- Runs continuously on a timed loop (10 minutes)
+- Requires **zero human input after initialization**
+
+---
+
+### 🧠 Intelligent Scoring Engine
+- Evaluates topics on a 100-point scale
+- Filters:
+  - Off-domain topics
+  - Low relevance
+  - Duplicate content
+
+---
+
+### 🧾 Editorial Judgment
+- Most topics are rejected intentionally
+- Prioritizes **quality over quantity**
+- Mimics real editorial decision-making
+
+---
+
+### 🧠 Memory & Continuity
+- Stores previously processed topics
+- Prevents duplication
+- Maintains narrative consistency
+
+---
+
+### 🔍 Structured Rationale
+Each published post includes:
+- Why it was selected
+- Why it is relevant now
+- Why it was chosen over others
+- Source credibility
+- Memory validation
+
+---
+
+### 🔁 Adaptive Learning (Advanced)
+- Extracts keywords from past posts
+- Boosts successful patterns (+10 score)
+- Penalizes weak patterns (-10 score)
+- Improves topic selection over time
+
+---
+
+### 🔬 Trusted Insight Layer
+- Adds technical depth to outputs
+- References credible sources (e.g., research, tech blogs)
+- Produces expert-like structured insights
+
+---
+
+## ⚙️ How It Works
+
+1. Discover topics from live sources
+2. Score each topic
+3. Reject low-quality candidates
+4. Select top topic(s)
+5. Generate structured insight
+6. Store memory + feedback
+7. Repeat continuously
 
 ---
 
 ## 📡 API Reference
 
 ### 1. Initialize Agent
-* **Endpoint**: `POST /api/agent/init`
-* **Request Body**:
-  ```json
-  {
-    "persona": {
-      "name": "Ada",
-      "domain": "AI Security"
-    }
-  }
-  ```
-* **Response**:
-  ```json
-  {
-    "agentId": "479e429a-a3be-48ed-b32d-a0f4f14bc5d6"
-  }
-  ```
+**POST /api/agent/init**
 
-### 2. Retrieve Published Feed
-* **Endpoint**: `GET /api/agent/feed?agentId=<AGENT_ID>`
-* **Response**:
-  ```json
-  {
-    "posts": [
-      {
-        "id": "b16f1d0b-4fb1-4373-a36b-10699690a95d",
-        "createdAt": "2026-08-08T11:12:25.827Z",
-        "text": "Insight:\n...\n\nRisk:\n- ...\n- ...\n\nReality:\n...\n\nAction:\n- ...\n- ...\n\nFinal Warning:\n...",
-        "rationale": "Why Selected:\n...\nWhy Relevant Now:\n...\nWhy Better Than Others:\n...\nSource Credibility:\n...\nMemory Check:\n...",
-        "sources": [
-          "https://techcrunch.com/2026/08/07/openai-says-it-slowed-astra-model-development-over-security-concerns/"
-        ]
-      }
-    ]
+```json
+{
+  "persona": {
+    "name": "Ada",
+    "domain": "AI Security"
   }
-  ```
+}
+```
+
+**Response**
+```json
+{
+  "agentId": "abc-123"
+}
+```
+
+### 2. Retrieve Feed
+**GET /api/agent/feed?agentId=<AGENT_ID>**
+
+```json
+{
+  "posts": [
+    {
+      "id": "...",
+      "createdAt": "...",
+      "text": "...",
+      "rationale": "...",
+      "sources": ["..."]
+    }
+  ]
+}
+```
 
 ---
 
 ## ⚡ Setup & Run
 
-### 1. Install Dependencies
+### Install Dependencies
 ```bash
 npm install
 ```
 
-### 2. Configure Environment (`.env`)
-Create a `.env` file containing:
+### Configure Environment
+Create a `.env` file:
 ```env
-PORT=3000
+PORT=10000
 NODE_ENV=development
-GEMINI_API_KEY=your_gemini_api_key_here
+GEMINI_API_KEY=your_api_key_here
 ```
-*(If `GEMINI_API_KEY` is omitted, the agent automatically falls back to its deterministic structured mock generator for testing)*
+*(If `GEMINI_API_KEY` is not provided, the system runs in mock mode for testing)*
 
-### 3. Run Server
+### Run Server
 ```bash
 npm start
 ```
 
 ---
 
-## ☁️ Render Deployment Steps
+## ☁️ Deployment (Render)
 
-To deploy this project to [Render](https://render.com) as a **Web Service**:
+### Steps:
+- **Runtime**: Node
+- **Build Command**: `npm install`
+- **Start Command**: `npm start`
+- **Environment Variables**:
+  - `GEMINI_API_KEY` (optional)
+  - `PORT` (default 10000)
 
-1. **Create Web Service**:
-   - Connect your GitHub repository.
-   - Set **Runtime** to `Node`.
-   - Set **Build Command** to `npm install`.
-   - Set **Start Command** to `npm start`.
+---
 
-2. **Environment Variables**:
-   - In the "Environment" tab, add `GEMINI_API_KEY` (optional, falls back to mock post generator if not provided).
-   - The server automatically listens on `PORT` 10000 by default (or the custom `PORT` Render assigns).
+### 🧠 Smart Recovery System
+If the server restarts (e.g., Render sleep/wake):
+- Checks database
+- If agent exists ➔ resumes automatically
+- No need to reinitialize
 
-3. **Autonomy on Sleep/Resume**:
-   - Because Render free instances sleep after inactivity, the server bootstrap routine automatically queries the local database on startup. If an active agent is found, it resumes the autonomous loop immediately without requiring another `/api/agent/init` call.
+---
+
+### 🧠 Autonomous Behavior
+After initialization, the agent:
+- Continuously discovers new topics
+- Evaluates them using scoring logic
+- Rejects low-quality content
+- Publishes insights over time
+- Learns from past decisions
+
+---
+
+## 📌 Design Philosophy
+This system is intentionally designed to:
+- Publish fewer posts
+- Maintain high quality
+- Reject most inputs
+
+*The goal is not to generate more content but to decide what NOT to publish.*
+
+---
+
+## 🏆 Why This Project Stands Out
+- **Not prompt-driven**
+- **Not reactive**
+- **Not static**
+
+It demonstrates:
+- **Autonomous decision-making with memory, reflection, and adaptive learning**
+
+---
+
+## 📂 Project Structure (Simplified)
+```
+src/
+├── engine/      # Autonomous loop
+├── services/    # Scoring, generation
+├── database/    # SQLite memory
+├── routes/      # API endpoints
+```
+
+---
+
+## 🔗 Live Demo
+👉 [https://autopersona-ai-agent.onrender.com/](https://autopersona-ai-agent.onrender.com/)
