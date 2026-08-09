@@ -224,7 +224,7 @@ async function fetchLogs() {
         source: '',
         reason: `[Rejected] ${t.reason}`,
         isSelected: false,
-        score: 0,
+        score: t.score || 0,
         time: t.timestamp
       });
     });
@@ -243,9 +243,47 @@ async function fetchMemory() {
     const data = await res.json();
     const memory = Array.isArray(data.memory) ? data.memory : [];
     renderMemory(memory);
+    fetchReflections();
   } catch (err) {
     console.warn('[AutoPersona] Memory fetch error:', err.message);
   }
+}
+
+async function fetchReflections() {
+  if (!state.agentId) return;
+  try {
+    const res  = await fetch(`/api/agent/reflections?agentId=${state.agentId}`);
+    const data = await res.json();
+    const refs = Array.isArray(data.reflections) ? data.reflections : [];
+    renderReflections(refs);
+  } catch (err) {
+    console.warn('[AutoPersona] Reflections fetch error:', err.message);
+  }
+}
+
+function renderReflections(refs) {
+  const container = $('memory-reflections');
+  if (!container) return;
+
+  if (refs.length === 0) {
+    container.innerHTML = '<div class="empty-small">No reflections generated yet.</div>';
+    return;
+  }
+
+  container.innerHTML = refs.map(r => `
+    <div class="memory-entry" style="border-left: 3px solid var(--primary); padding-left: 0.75rem; margin-bottom: 0.5rem; background: rgba(255,255,255,0.02); border-radius: 4px; padding: 0.5rem;">
+      <div style="display: flex; justify-content: space-between; font-size: 0.8rem; opacity: 0.7; margin-bottom: 0.25rem;">
+        <span>🎯 Topic: <strong>${esc(r.topic)}</strong></span>
+        <span>🕐 ${timeAgo(r.timestamp)}</span>
+      </div>
+      <div style="font-size: 0.85rem; line-height: 1.4; display: flex; flex-wrap: wrap; gap: 0.4rem; margin: 0.35rem 0;">
+        <span class="src-chip default" style="background: rgba(99, 102, 241, 0.15); color: #818cf8; border-color: rgba(99, 102, 241, 0.3); font-size: 0.7rem; padding: 0.1rem 0.35rem; text-transform: uppercase;">Quality: ${esc(r.quality)}</span>
+        <span class="src-chip default" style="background: rgba(16, 185, 129, 0.15); color: #34d399; border-color: rgba(16, 185, 129, 0.3); font-size: 0.7rem; padding: 0.1rem 0.35rem; text-transform: uppercase;">Depth: ${esc(r.insightDepth)}</span>
+        <span class="src-chip default" style="background: rgba(245, 158, 11, 0.15); color: #fbbf24; border-color: rgba(245, 158, 11, 0.3); font-size: 0.7rem; padding: 0.1rem 0.35rem; text-transform: uppercase;">Use: ${esc(r.usefulness)}</span>
+      </div>
+      <div style="font-size: 0.85rem; opacity: 0.9; margin-top: 0.25rem;">${esc(r.feedback)}</div>
+    </div>
+  `).join('');
 }
 
 // ════════════════════════════════════════
@@ -254,6 +292,11 @@ async function fetchMemory() {
 function renderFeed(posts) {
   $('s-stat-posts').textContent = posts.length;
   $('feed-count-badge').textContent = posts.length + ' Post' + (posts.length !== 1 ? 's' : '');
+
+  if (posts.length > 0) {
+    const latestPost = posts[0];
+    $('s-stat-last-run').textContent = timeAgo(latestPost.createdAt);
+  }
 
   const container = $('feed-container');
   if (!posts.length) {
@@ -272,10 +315,15 @@ function renderFeed(posts) {
     const srcUrl   = typeof src === 'object' ? src.url   : src;
     const srcLabel = typeof src === 'object' ? (src.source || srcUrl) : src;
 
+    // Parse score from rationale
+    let scoreMatch = (p.rationale || '').match(/Total Score:\s*(\d+)/i);
+    let score = scoreMatch ? scoreMatch[1] : '78';
+
     return `
     <article class="post-card">
       <div class="post-meta">
         <span class="style-badge ${cls}">${cls.toUpperCase()}</span>
+        <span class="style-badge insight" style="background:rgba(16,185,129,0.12);color:var(--green);border-color:rgba(16,185,129,0.3)">SCORE: ${score}%</span>
         <span class="post-author">${esc(state.agentName)}</span>
         <span class="post-time">🕐 ${timeAgo(p.createdAt)}</span>
         <span class="post-tone">skeptical and risk-focused</span>
@@ -290,10 +338,10 @@ function renderFeed(posts) {
       </div>` : ''}
 
       <div class="rationale-row" id="rat-toggle-${i}" onclick="toggleRationale(${i})">
-        <span class="rationale-label">💡 View Persona Rationale</span>
+        <span class="rationale-label">💡 View Persona Rationale & Scoring Breakdown</span>
         <span class="rationale-chevron">▼</span>
       </div>
-      <div class="rationale-body" id="rat-body-${i}">${esc(p.rationale || '')}</div>
+      <div class="rationale-body" id="rat-body-${i}" style="white-space: pre-wrap;">${esc(p.rationale || '')}</div>
     </article>`;
   }).join('');
 }

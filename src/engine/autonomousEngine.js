@@ -294,8 +294,23 @@ ${generated.rationale}`;
     // Reflection & Learning Loop
     try {
       const reflection = await reflectOnPost(post.text);
-      console.log(`[Reflection Engine] Quality: ${reflection.quality}, Reason: ${reflection.reason}`);
+      console.log(`[Reflection Engine] Quality: ${reflection.quality}, Reason: ${reflection.feedback}`);
       adjustWeights(reflection);
+
+      // Save reflection details to SQLite database
+      await db.saveReflection({
+        id: crypto.randomUUID(),
+        agentId: agent.id,
+        postId: post.id,
+        topic: selectedEval.title,
+        score: selectedEval.score,
+        quality: reflection.quality,
+        insightDepth: reflection.insightDepth,
+        novelty: reflection.novelty,
+        usefulness: reflection.usefulness,
+        feedback: reflection.feedback,
+        timestamp: new Date().toISOString()
+      });
     } catch (e) {
       console.error('[Reflection Engine] Failed to process reflection:', e.message);
     }

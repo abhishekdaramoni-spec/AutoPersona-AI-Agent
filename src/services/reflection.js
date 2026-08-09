@@ -11,7 +11,10 @@ if (apiKey) {
 
 export async function reflectOnPost(postText) {
   let quality = "high";
-  let reason = "deep technical risk focus";
+  let insightDepth = "high";
+  let novelty = "fresh";
+  let usefulness = "practical";
+  let feedback = "deep technical risk focus and zero-trust guidelines";
 
   if (genAI) {
     try {
@@ -25,15 +28,13 @@ export async function reflectOnPost(postText) {
         Post content:
         "${postText}"
 
-        Analyze:
-        1. Is it too generic?
-        2. Is the technical depth high?
-        3. Are zero-trust actions specific?
-
-        Return a JSON object:
+        Analyze and return a JSON object with these exact keys:
         {
-          "quality": "high", // or "medium", "low"
-          "reason": "short explanation of quality rating"
+          "quality": "high" | "medium" | "low",
+          "insightDepth": "low" | "medium" | "high",
+          "novelty": "repetitive" | "fresh",
+          "usefulness": "practical" | "generic",
+          "feedback": "short text explaining the evaluation"
         }
       `;
       
@@ -41,7 +42,10 @@ export async function reflectOnPost(postText) {
       const resText = result.response.text();
       const parsed = JSON.parse(resText);
       quality = parsed.quality || quality;
-      reason = parsed.reason || reason;
+      insightDepth = parsed.insightDepth || insightDepth;
+      novelty = parsed.novelty || novelty;
+      usefulness = parsed.usefulness || usefulness;
+      feedback = parsed.feedback || feedback;
     } catch (e) {
       console.warn('[Reflection] Gemini reflection failed, using fallback rating:', e.message);
     }
@@ -50,16 +54,25 @@ export async function reflectOnPost(postText) {
     const len = (postText || '').length;
     if (len > 300) {
       quality = "high";
-      reason = "extended structured technical vulnerability breakdown";
+      insightDepth = "high";
+      novelty = "fresh";
+      usefulness = "practical";
+      feedback = "extended structured technical vulnerability breakdown is thorough and detailed";
     } else {
       quality = "medium";
-      reason = "standard framework warning structure";
+      insightDepth = "medium";
+      novelty = "fresh";
+      usefulness = "generic";
+      feedback = "standard framework warning structure provides high level overview";
     }
   }
 
   return {
     quality,
-    reason,
+    insightDepth,
+    novelty,
+    usefulness,
+    feedback,
     timestamp: new Date().toISOString()
   };
 }

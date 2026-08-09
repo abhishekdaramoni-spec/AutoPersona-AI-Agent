@@ -100,6 +100,10 @@
             <span class="stat-val cyan" id="s-stat-evaluated">0</span>
           </div>
           <div class="stat-row">
+            <span class="stat-key">Last Run Time</span>
+            <span class="stat-val yellow" id="s-stat-last-run" style="font-size: 0.8rem;">Never</span>
+          </div>
+          <div class="stat-row">
             <span class="stat-key">Cycle Interval</span>
             <span class="stat-val purple">10 min</span>
           </div>
@@ -221,6 +225,13 @@
           <div class="memory-card memory-card-full">
             <div class="memory-card-title">💬 Persona Opinions &amp; Stances</div>
             <div id="memory-opinions"></div>
+          </div>
+
+          <div class="memory-card memory-card-full" style="margin-top: 1.5rem;">
+            <div class="memory-card-title">🧠 Self-Improving Reflections &amp; Learnings</div>
+            <div id="memory-reflections" style="display: flex; flex-direction: column; gap: 0.75rem; max-height: 300px; overflow-y: auto;">
+              <div class="empty-small">No reflections generated yet.</div>
+            </div>
           </div>
         </section>
 

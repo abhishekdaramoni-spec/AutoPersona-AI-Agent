@@ -79,6 +79,25 @@ async function initDb(database) {
   await database.exec(`
     CREATE INDEX IF NOT EXISTS idx_topics_title ON topics_seen (agentId, title);
   `);
+
+  // Create reflections table
+  await database.exec(`
+    CREATE TABLE IF NOT EXISTS reflections (
+      id TEXT PRIMARY KEY,
+      agentId TEXT NOT NULL,
+      postId TEXT NOT NULL,
+      topic TEXT NOT NULL,
+      score REAL NOT NULL,
+      quality TEXT NOT NULL,
+      insightDepth TEXT NOT NULL,
+      novelty TEXT NOT NULL,
+      usefulness TEXT NOT NULL,
+      feedback TEXT NOT NULL,
+      timestamp TEXT NOT NULL,
+      FOREIGN KEY (agentId) REFERENCES agents (id) ON DELETE CASCADE,
+      FOREIGN KEY (postId) REFERENCES posts (id) ON DELETE CASCADE
+    )
+  `);
 }
 
 export async function saveAgent(agent) {
@@ -219,4 +238,33 @@ export async function getRecentMemory(agentId, limit = 10) {
     recentPosts: recentPosts.map(p => `[${p.styleType}] ${p.text}`),
     recentTopics: recentTopics.map(t => t.title)
   };
+}
+
+export async function saveReflection(ref) {
+  const database = await getDb();
+  await database.run(
+    `INSERT OR REPLACE INTO reflections (id, agentId, postId, topic, score, quality, insightDepth, novelty, usefulness, feedback, timestamp)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+    [
+      ref.id,
+      ref.agentId,
+      ref.postId,
+      ref.topic,
+      ref.score,
+      ref.quality,
+      ref.insightDepth,
+      ref.novelty,
+      ref.usefulness,
+      ref.feedback,
+      ref.timestamp
+    ]
+  );
+}
+
+export async function getReflections(agentId, limit = 20) {
+  const database = await getDb();
+  return database.all(
+    'SELECT * FROM reflections WHERE agentId = ? ORDER BY timestamp DESC LIMIT ?',
+    [agentId, limit]
+  );
 }

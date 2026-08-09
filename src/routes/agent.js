@@ -169,6 +169,7 @@ router.get('/agent/logs', async (req, res) => {
           rejectedTopics.push({
             title,
             reason,
+            score: t.score || 0,
             timestamp: post.createdAt
           });
         });
@@ -240,6 +241,21 @@ router.get('/agent/status', async (req, res) => {
     }
   } catch (error) {
     console.error('API Error in /agent/status:', error.message);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// 6. GET /api/agent/reflections
+router.get('/agent/reflections', async (req, res) => {
+  try {
+    const agentId = await getTargetAgentId(req);
+    if (!agentId) {
+      return res.json({ reflections: [] });
+    }
+    const reflections = await db.getReflections(agentId) || [];
+    res.json({ reflections });
+  } catch (error) {
+    console.error('API Error in /agent/reflections:', error.message);
     res.status(500).json({ error: error.message });
   }
 });
