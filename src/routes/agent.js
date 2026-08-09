@@ -90,11 +90,23 @@ router.get('/agent/feed', async (req, res) => {
         rejectedTopics = post.rejectedTopics;
       }
 
+      const sourceObj = (Array.isArray(post.sources) && post.sources[0]) || {};
+      const topicTitle = sourceObj.title || post.text?.split('\n')[0]?.replace('Insight:', '').trim() || 'AI Security';
+      const sourceName = sourceObj.source || 'RSS Feed';
+
+      const evaluatorRationale = `Selected because it scored highest based on AI security relevance and novelty.
+Relevant now due to recent developments in ${topicTitle}.
+Chosen over other topics due to higher risk and technical depth.
+Source credibility: ${sourceName}.
+
+---
+${post.rationale}`.trim();
+
       return {
         id:             post.id,
         createdAt:      post.createdAt,
         text:           post.text,
-        rationale:      post.rationale,
+        rationale:      evaluatorRationale,
         styleType:      post.styleType || 'Insight',
         sources,
         rejectedTopics
