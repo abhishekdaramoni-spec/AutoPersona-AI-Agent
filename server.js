@@ -3,14 +3,15 @@ import path from 'path';
 import { fileURLToPath } from 'url';
 import express from 'express';
 import cors from 'cors';
-import { getDb } from './src/services/memory.js';
+import { getDb, getLatestAgent } from './src/services/memory.js';
 import agentRouter from './src/routes/agent.js';
+import { startScheduler, runAutonomousCycle } from './src/engine/autonomousEngine.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
-// added duplicate prevention logic
+
 const app = express();
-const PORT = process.env.PORT || 3000;
+const PORT = process.env.PORT || 10000;
 
 app.use(cors());
 app.use(express.json());
@@ -30,6 +31,14 @@ async function bootstrap() {
     console.log('[Bootstrap] Initializing SQLite database connection...');
     await getDb();
     console.log('[Bootstrap] Database is ready.');
+
+    // Auto-resume scheduler loop on boot if agent is already initialized
+    const activeAgent = await getLatestAgent();
+    if (activeAgent) {
+      console.log(`[Bootstrap] Active agent "${activeAgent.name}" found. Starting scheduler...`);
+      startScheduler();
+      runAutonomousCycle().catch(e => console.error('[Bootstrap] Startup cycle execution failed:', e.message));
+    }
 
     app.listen(PORT, () => {
       console.log(`=================================================`);

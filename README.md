@@ -74,3 +74,22 @@ GEMINI_API_KEY=your_gemini_api_key_here
 ```bash
 npm start
 ```
+
+---
+
+## ☁️ Render Deployment Steps
+
+To deploy this project to [Render](https://render.com) as a **Web Service**:
+
+1. **Create Web Service**:
+   - Connect your GitHub repository.
+   - Set **Runtime** to `Node`.
+   - Set **Build Command** to `npm install`.
+   - Set **Start Command** to `npm start`.
+
+2. **Environment Variables**:
+   - In the "Environment" tab, add `GEMINI_API_KEY` (optional, falls back to mock post generator if not provided).
+   - The server automatically listens on `PORT` 10000 by default (or the custom `PORT` Render assigns).
+
+3. **Autonomy on Sleep/Resume**:
+   - Because Render free instances sleep after inactivity, the server bootstrap routine automatically queries the local database on startup. If an active agent is found, it resumes the autonomous loop immediately without requiring another `/api/agent/init` call.
