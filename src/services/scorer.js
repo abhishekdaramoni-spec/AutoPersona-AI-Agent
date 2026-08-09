@@ -24,16 +24,36 @@ export function isClearlyIrrelevant(topic) {
 
 /**
  * Calculates a relevance score from 0 to 100 based on:
- * - AI Security Relevance (0–40)
- * - Impact Score (0–20)
- * - Recency Score (0–20)
- * - Novelty Score (0–20)
+ * - AI security relevance (0–50)
+ * - recency (0–20)
+ * - uniqueness (0–30)
+ * 
+ * Reject (return null) if score < 50
  */
 export function calculateRelevanceScore(topic, isDuplicate = false) {
   if (!topic || !topic.title) return 0;
-  const score = Math.random() * 100;
-  if (score < 50) return null;
-  return score;
+  const titleLower = topic.title.toLowerCase();
+
+  // 1. AI Security Relevance (0–50)
+  let relevance = 10;
+  const highKeywords = ['jailbreak', 'prompt injection', 'vulnerability', 'exploit', 'sandbox', 'adversarial', 'data exfiltration', 'breach', 'security concern', 'ai safety', 'ai security'];
+  const midKeywords = ['ai', 'llm', 'model', 'openai', 'gpt', 'claude', 'gemini', 'agent', 'machine learning', 'security', 'hack', 'cybersecurity', 'attack'];
+
+  if (highKeywords.some(kw => titleLower.includes(kw))) {
+    relevance = 45;
+  } else if (midKeywords.some(kw => titleLower.includes(kw))) {
+    relevance = 30;
+  }
+
+  // 2. Recency (0–20)
+  const recency = 18;
+
+  // 3. Uniqueness (0–30)
+  const uniqueness = isDuplicate ? 5 : 25;
+
+  const total = relevance + recency + uniqueness;
+  if (total < 50) return null;
+  return total;
 }
 
 export function isStrictAISecurity(topic) {

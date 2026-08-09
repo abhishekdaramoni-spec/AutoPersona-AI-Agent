@@ -11,7 +11,11 @@ export function startScheduler() {
     clearInterval(intervalId);
   }
   
-  // Set up 10-minute loop
+  // RUN FIRST CYCLE IMMEDIATELY
+  console.log("Starting autonomous agent...");
+  runAutonomousCycle().catch(e => console.error('[Scheduler] Initial run failed:', e.message));
+
+  // THEN START LOOP
   intervalId = setInterval(() => {
     console.log("Autonomous loop running...");
     console.log('[Scheduler] Running autonomous cycle...');
@@ -26,7 +30,7 @@ export async function runAutonomousCycle() {
   }
   
   isRunning = true;
-  console.log(`[Autonomous Engine] Cycle started at ${new Date().toISOString()}`);
+  console.log("🚀 Cycle started");
 
   try {
     const agent = await db.getLatestAgent();
@@ -36,9 +40,11 @@ export async function runAutonomousCycle() {
       return { success: false, reason: 'No agent initialized' };
     }
 
-    console.log(`[Autonomous Engine] Starting cycle for agent: ${agent.name} (${agent.domain})`);
     const discovered = await discoverTopics();
-    console.log(`[Autonomous Engine] Discovered ${discovered.length} topics from live feeds.`);
+    console.log(`Topics fetched: ${discovered.length}`);
+    if (!discovered.length) {
+      console.log("⚠️ No topics, using fallback");
+    }
 
     const filteredTopics = [];
     const cycleRejections = [];
@@ -47,13 +53,23 @@ export async function runAutonomousCycle() {
       // 1. Duplicate check
       const isDuplicate = await db.isTopicDuplicate(agent.id, topic.title);
       if (isDuplicate) {
-        cycleRejections.push({ title: topic.title, reason: 'Duplicate' });
+        cycleRejections.push({
+          title: topic.title,
+          reason: 'duplicate',
+          score: 0,
+          timestamp: new Date().toISOString()
+        });
         continue;
       }
 
-      // 2. Irrelevance Rejection Guard (lawsuits, wildfire, etc.)
+      // 2. Off-Domain Rejection
       if (isClearlyIrrelevant(topic)) {
-        cycleRejections.push({ title: topic.title, reason: 'Not AI security' });
+        cycleRejections.push({
+          title: topic.title,
+          reason: 'off-domain',
+          score: 0,
+          timestamp: new Date().toISOString()
+        });
         continue;
       }
 
@@ -63,14 +79,24 @@ export async function runAutonomousCycle() {
         return titleLower.includes(kw);
       });
       if (!isAI) {
-        cycleRejections.push({ title: topic.title, reason: 'Not AI security' });
+        cycleRejections.push({
+          title: topic.title,
+          reason: 'off-domain',
+          score: 0,
+          timestamp: new Date().toISOString()
+        });
         continue;
       }
 
-      // Calculate score out of 100
+      // Calculate score based on components
       const score = calculateRelevanceScore(topic, isDuplicate);
       if (score === null) {
-        cycleRejections.push({ title: topic.title, reason: 'Low relevance' });
+        cycleRejections.push({
+          title: topic.title,
+          reason: 'low relevance',
+          score: 45,
+          timestamp: new Date().toISOString()
+        });
         continue;
       }
       filteredTopics.push({ ...topic, score });
@@ -95,7 +121,12 @@ export async function runAutonomousCycle() {
       candidates.sort((a, b) => b.score - a.score);
       selectedEval = candidates[0];
       candidates.slice(1).forEach(c => {
-        cycleRejections.push({ title: c.title, reason: 'Low relevance' });
+        cycleRejections.push({
+          title: c.title,
+          reason: 'low relevance',
+          score: Math.round(c.score),
+          timestamp: new Date().toISOString()
+        });
       });
     }
 
@@ -103,13 +134,17 @@ export async function runAutonomousCycle() {
       filteredTopics.sort((a, b) => b.score - a.score);
       selectedEval = filteredTopics[0];
       filteredTopics.slice(1).forEach(c => {
-        cycleRejections.push({ title: c.title, reason: 'Low relevance' });
+        cycleRejections.push({
+          title: c.title,
+          reason: 'low relevance',
+          score: Math.round(c.score),
+          timestamp: new Date().toISOString()
+        });
       });
     }
 
     // FALLBACK TOPIC MECHANISM: Guarantee at least 1 post is generated if discovery is empty or all filtered
     if (!selectedEval) {
-      console.log('[Autonomous Engine] No valid live topics found or all filtered out. Triggering AI Security Fallback Topic.');
       const fallbackTitles = [
         "New AI security risks emerging in LLM deployments",
         "Zero-day vulnerability discovered in open-source AI agent frameworks",
@@ -138,7 +173,8 @@ export async function runAutonomousCycle() {
       };
     }
 
-    console.log(`[Autonomous Engine] Selected Topic for Post: "${selectedEval.title}" (Score: ${selectedEval.score}%)`);
+    console.log(`Rejected: ${cycleRejections.length}`);
+    console.log(`Selected topic: ${selectedEval.title}`);
 
     // Track selection decision log in database seen topics memory registry
     await db.saveTopicSeen({
@@ -201,7 +237,7 @@ ${generated.rationale}`;
     };
 
     await db.savePost(post);
-    console.log(`[Autonomous Engine] Post Created Successfully! Post ID: ${post.id}`);
+    console.log("Post created");
 
     isRunning = false;
     return { success: true, postsCreated: 1, post };
