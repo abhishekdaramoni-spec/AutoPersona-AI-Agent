@@ -37,7 +37,7 @@ export async function runAutonomousCycle() {
   }
   
   isRunning = true;
-  console.log("🚀 Cycle started");
+  console.log("Agent cycle started");
 
   try {
     const agent = await db.getLatestAgent();
@@ -318,11 +318,13 @@ ${generated.rationale}`;
     const allPosts = await db.getPosts(agent.id) || [];
     console.log("Total posts:", allPosts.length);
 
+    console.log("Agent cycle completed");
     isRunning = false;
     return { success: true, postsCreated: 1, post };
 
   } catch (error) {
     console.error('[Autonomous Engine] Exception in cycle:', error.message);
+    console.log("Agent cycle completed");
     isRunning = false;
     return { success: false, error: error.message };
   }
