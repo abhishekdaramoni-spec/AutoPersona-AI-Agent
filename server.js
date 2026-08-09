@@ -39,35 +39,16 @@ async function bootstrap() {
       console.log(`=================================================`);
     });
 
-    // 🔥 FORCE START ALWAYS
+    // 🔥 Auto-resume only if agent exists (recovery / wake restart)
     setTimeout(async () => {
-      console.log("🚀 Auto-starting agent...");
       try {
         const activeAgent = await getLatestAgent();
-        if (!activeAgent) {
-          console.log("No agent found, creating default agent...");
-          await saveAgent({
-            id: 'default-agent-uuid-12345',
-            name: 'Ada',
-            domain: 'AI Security',
-            style: [
-              "No emojis",
-              "No hype language",
-              "Always highlight risks",
-              "Use structured reasoning",
-              "End with warning or insight"
-            ],
-            tone: "skeptical, risk-focused, structured",
-            opinions: [
-              "Current LLM safety guardrails are mostly security theater and easily bypassed",
-              "The rush to deploy agents without sandboxed runtimes is the biggest cybersecurity threat of this decade",
-              "Organizations hosting private corporate data on public AI APIs are walking into a data privacy nightmare"
-            ],
-            interests: ["LLM jailbreaking", "prompt injection", "zero-trust sandboxing"],
-            createdAt: new Date().toISOString()
-          });
+        if (activeAgent) {
+          console.log(`[Bootstrap] Active agent "${activeAgent.name}" found. Starting scheduler...`);
+          startScheduler();
+        } else {
+          console.log("[Bootstrap] No active agent found. Waiting for initialization via POST /api/agent/init.");
         }
-        startScheduler();
       } catch (err) {
         console.error("❌ Failed to auto-start agent:", err.message);
       }
