@@ -1,7 +1,7 @@
 import crypto from 'crypto';
 import { discoverTopics } from '../services/topicFetcher.js';
 import * as db from '../services/memory.js';
-import { calculateRelevanceScore, isClearlyIrrelevant, generatePost, POST_STYLES, adjustWeights } from '../services/scorer.js';
+import { calculateRelevanceScore, isClearlyIrrelevant, generatePost, POST_STYLES, adjustWeights, updateAdaptiveKeywords } from '../services/scorer.js';
 import { reflectOnPost } from './../services/reflection.js';
 
 let intervalId = null;
@@ -45,6 +45,26 @@ export async function runAutonomousCycle() {
       console.warn('[Autonomous Engine] No agent initialized yet. Initialize first via /api/agent/init.');
       isRunning = false;
       return { success: false, reason: 'No agent initialized' };
+    }
+
+    // Dynamic Keyword Adaptation: Retrieve reflections to adapt score weights
+    try {
+      const pastReflections = await db.getReflections(agent.id, 50) || [];
+      const successful = [];
+      const rejected = [];
+      pastReflections.forEach(ref => {
+        const words = ref.topic.toLowerCase().split(/[\s,.:;'"?!()\-]+/i).filter(w => w.length > 4);
+        if (ref.quality === 'high') {
+          successful.push(...words);
+        } else if (ref.quality === 'low') {
+          rejected.push(...words);
+        }
+      });
+      const uniqueSuccess = [...new Set(successful)];
+      const uniqueReject = [...new Set(rejected)];
+      updateAdaptiveKeywords(uniqueSuccess, uniqueReject);
+    } catch (learnErr) {
+      console.warn('[Autonomous Engine] Adaptive keyword loader failed:', learnErr.message);
     }
 
     let discovered = [];

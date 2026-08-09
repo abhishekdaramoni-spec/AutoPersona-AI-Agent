@@ -30,6 +30,15 @@ export let scoringWeights = {
   insightPotential: 1.0
 };
 
+export let adaptiveBoostKeywords = [];
+export let adaptivePenalizeKeywords = [];
+
+export function updateAdaptiveKeywords(successful, rejected) {
+  adaptiveBoostKeywords = successful || [];
+  adaptivePenalizeKeywords = rejected || [];
+  console.log(`[Scorer Engine] Learning Keywords: Boosted: [${adaptiveBoostKeywords.join(', ')}], Penalized: [${adaptivePenalizeKeywords.join(', ')}]`);
+}
+
 export function adjustWeights(feedback) {
   console.log(`[Scorer Engine] Learning: adjusting weights based on reflection feedback. Quality: ${feedback.quality}`);
   if (feedback.quality === 'high') {
@@ -88,12 +97,22 @@ export function calculateRelevanceScore(topic, isDuplicate = false) {
     insightPotential = 10;
   }
 
+  // 6. Dynamic Adaptive Score adjustment
+  let adaptationScore = 0;
+  if (adaptiveBoostKeywords.some(kw => titleLower.includes(kw))) {
+    adaptationScore += 10;
+  }
+  if (adaptivePenalizeKeywords.some(kw => titleLower.includes(kw))) {
+    adaptationScore -= 10;
+  }
+
   const score = Math.round(
     (domainMatch * scoringWeights.domainMatch) +
     (novelty * scoringWeights.novelty) +
     (credibility * scoringWeights.credibility) +
     (riskDepth * scoringWeights.riskDepth) +
-    (insightPotential * scoringWeights.insightPotential)
+    (insightPotential * scoringWeights.insightPotential) +
+    adaptationScore
   );
 
   if (score < 50) return null;
