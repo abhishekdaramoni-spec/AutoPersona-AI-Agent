@@ -125,8 +125,8 @@ export async function runAutonomousCycle() {
       }
 
       // Calculate score based on components
-      const score = calculateRelevanceScore(topic, isDuplicate);
-      if (score === null) {
+      const evalResult = calculateRelevanceScore(topic, isDuplicate);
+      if (evalResult === null) {
         cycleRejections.push({
           title: topic.title,
           reason: 'low relevance',
@@ -135,7 +135,7 @@ export async function runAutonomousCycle() {
         });
         continue;
       }
-      filteredTopics.push({ ...topic, score });
+      filteredTopics.push({ ...topic, score: evalResult.score, breakdown: evalResult.breakdown });
     }
 
     // Relaxed check if strict AI safety topics list is empty
@@ -144,9 +144,9 @@ export async function runAutonomousCycle() {
         const isDuplicate = await db.isTopicDuplicate(agent.id, topic.title);
         if (isDuplicate || isClearlyIrrelevant(topic)) continue;
         
-        const score = calculateRelevanceScore(topic, false);
-        if (score === null) continue;
-        filteredTopics.push({ ...topic, score });
+        const evalResult = calculateRelevanceScore(topic, false);
+        if (evalResult === null) continue;
+        filteredTopics.push({ ...topic, score: evalResult.score, breakdown: evalResult.breakdown });
       }
     }
 
@@ -205,6 +205,7 @@ export async function runAutonomousCycle() {
         url: 'https://techcrunch.com/category/artificial-intelligence/',
         source: 'RSS (TechCrunch)',
         score: 78,
+        breakdown: { domainMatch: 30, novelty: 20, credibility: 20, riskDepth: 20, insightPotential: 10 },
         createdAt: new Date().toISOString()
       };
     }
@@ -237,6 +238,9 @@ export async function runAutonomousCycle() {
       ? `Passed duplicate prevention scan against recent published concepts.`
       : 'Passed duplicate prevention scan (timeline memory registry is empty)';
 
+    const br = selectedEval.breakdown || { domainMatch: 30, novelty: 20, credibility: 20, riskDepth: 20, insightPotential: 10 };
+    const reflectionText = `The agent prioritized "${selectedEval.title}" due to its high Risk Depth score of ${br.riskDepth}/20 and Domain Match of ${br.domainMatch}/30. In future cycles, similar technical LLM vulnerabilities will continue to be heavily favored.`;
+
     const enhancedRationale = `Why Selected:
 "${selectedEval.title}" aligns directly with our AI Security domain focus (Confidence: ${confidencePercent}%, Mode: Strategic Relevance Match).
 
@@ -245,6 +249,17 @@ This is a fresh industry technical update published recently, requiring real-tim
 
 Why Better Than Others:
 This topic scored higher than other candidates in this batch (which were rejected due to duplication, low relevance, or lack of AI security focus).
+
+Scoring Engine Breakdown:
+- Domain Match: ${br.domainMatch}/30
+- Novelty: ${br.novelty}/20
+- Credibility: ${br.credibility}/20
+- Risk Depth: ${br.riskDepth}/20
+- Insight Potential: ${br.insightPotential}/10
+- Total Score: ${confidencePercent}/100
+
+Learning & Reflection Layer:
+${reflectionText}
 
 Source Credibility:
 Discovered via ${selectedEval.source} (${credibilityRating}).

@@ -24,36 +24,63 @@ export function isClearlyIrrelevant(topic) {
 
 /**
  * Calculates a relevance score from 0 to 100 based on:
- * - AI security relevance (0–50)
- * - recency (0–20)
- * - uniqueness (0–30)
+ * - Domain Match (0–30)
+ * - Novelty (0–20)
+ * - Credibility (0–20)
+ * - Risk Depth (0–20)
+ * - Insight Potential (0–10)
  * 
- * Reject (return null) if score < 50
+ * Reject if score < 50
  */
 export function calculateRelevanceScore(topic, isDuplicate = false) {
   if (!topic || !topic.title) return 0;
   const titleLower = topic.title.toLowerCase();
 
-  // 1. AI Security Relevance (0–50)
-  let relevance = 10;
+  // 1. Domain Match (0–30)
+  let domainMatch = 5;
   const highKeywords = ['jailbreak', 'prompt injection', 'vulnerability', 'exploit', 'sandbox', 'adversarial', 'data exfiltration', 'breach', 'security concern', 'ai safety', 'ai security'];
   const midKeywords = ['ai', 'llm', 'model', 'openai', 'gpt', 'claude', 'gemini', 'agent', 'machine learning', 'security', 'hack', 'cybersecurity', 'attack'];
 
   if (highKeywords.some(kw => titleLower.includes(kw))) {
-    relevance = 45;
+    domainMatch = 30;
   } else if (midKeywords.some(kw => titleLower.includes(kw))) {
-    relevance = 30;
+    domainMatch = 20;
   }
 
-  // 2. Recency (0–20)
-  const recency = 18;
+  // 2. Novelty (0–20)
+  const novelty = isDuplicate ? 5 : 20;
 
-  // 3. Uniqueness (0–30)
-  const uniqueness = isDuplicate ? 5 : 25;
+  // 3. Credibility (0–20)
+  let credibility = 15;
+  if (topic.source && topic.source.includes('RSS')) {
+    credibility = 20;
+  }
 
-  const total = relevance + recency + uniqueness;
-  if (total < 50) return null;
-  return total;
+  // 4. Risk Depth (0–20)
+  let riskDepth = 10;
+  if (highKeywords.some(kw => titleLower.includes(kw))) {
+    riskDepth = 20;
+  }
+
+  // 5. Insight Potential (0–10)
+  let insightPotential = 5;
+  if (highKeywords.some(kw => titleLower.includes(kw))) {
+    insightPotential = 10;
+  }
+
+  const score = domainMatch + novelty + credibility + riskDepth + insightPotential;
+  if (score < 50) return null;
+  
+  return {
+    score,
+    breakdown: {
+      domainMatch,
+      novelty,
+      credibility,
+      riskDepth,
+      insightPotential
+    }
+  };
 }
 
 export function isStrictAISecurity(topic) {
